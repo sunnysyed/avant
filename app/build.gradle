@@ -1,0 +1,46 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "24.0.0 rc2"
+
+    defaultConfig {
+        applicationId "com.sunnysyed.avant"
+        minSdkVersion 14
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    jcenter()
+    maven { url "https://raw.githubusercontent.com/layerhq/releases-android/master/releases/" }
+    maven { url 'https://maven.fabric.io/public' }
+    maven { url "http://dl.bintray.com/pixplicity/maven" }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:22.2.1'
+    compile 'com.android.support:design:22.2.1'
+
+    compile 'uk.co.chrisjenx:calligraphy:2.1.0'
+    compile 'com.jakewharton:butterknife:7.0.1'
+    compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+
+    compile 'com.google.code.gson:gson:2.6.1'
+    compile 'com.squareup.retrofit2:retrofit:2.0.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.0.0'
+    compile 'com.squareup.okhttp3:okhttp:3.1.2'
+    compile 'cc.cloudist.acplibrary:library:1.2.1'//Loading
+    compile 'de.hdodenhof:circleimageview:2.0.0'
+
+}

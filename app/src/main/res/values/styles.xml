@@ -1,0 +1,55 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="AppTheme.NoActionBarColored">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="Bold" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-Bold.ttf</item>
+    </style>
+    <style name="BoldItalic" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-BoldItalic.ttf</item>
+    </style>
+    <style name="ExtraBold" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-ExtraBold.ttf</item>
+    </style>
+    <style name="ExtraBoldItalic" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-ExtraBoldItalic.ttf</item>
+    </style>
+    <style name="Italic" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-Italic.ttf</item>
+    </style>
+    <style name="Light" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-Light.ttf</item>
+    </style>
+    <style name="LightItalic" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-LightItalic.ttf</item>
+    </style>
+    <style name="Regular" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-Regular.ttf</item>
+    </style>
+    <style name="Semibold" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-Semibold.ttf</item>
+    </style>
+    <style name="SemiboldItalic.ttf" parent="android:TextAppearance">
+        <item name="fontPath">fonts/OpenSans-SemiboldItalic.ttf</item>
+    </style>
+
+</resources>
