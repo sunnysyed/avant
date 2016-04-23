@@ -1,6 +1,8 @@
 package com.sunnysyed.avant.activities;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -25,7 +27,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.sunnysyed.avant.Avant;
 import com.sunnysyed.avant.R;
@@ -33,6 +37,7 @@ import com.sunnysyed.avant.api.AvantApi;
 import com.sunnysyed.avant.api.UserSingleton;
 import com.sunnysyed.avant.api.model.LoanApplication;
 import com.sunnysyed.avant.api.model.LoanApplicationAttachment;
+import com.sunnysyed.avant.api.model.LoanTypes;
 import com.sunnysyed.avant.api.model.UserModel;
 
 import java.util.ArrayList;
@@ -64,8 +69,7 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                selectLoanType();
             }
         });
 
@@ -92,6 +96,54 @@ public class MainActivity extends AppCompatActivity
         dialog.setCanceledOnTouchOutside(false);
     }
 
+    private void selectLoanType() {
+        dialog.show();
+        AvantApi.get().getLoanTypes().enqueue(new Callback<LoanTypes>() {
+            @Override
+            public void onResponse(Call<LoanTypes> call, Response<LoanTypes> response) {
+                dialog.dismiss();
+                if (response.isSuccessful()){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Select Loan Type");
+                    final CharSequence[] cs = response.body().getLoanTypes().toArray(new CharSequence[response.body().getLoanTypes().size()]);
+
+                    builder.setItems(cs, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(final DialogInterface dialog1, int which) {
+                            dialog.show();
+                            AvantApi.get().createLoanApplication(UserSingleton.getInstance().accessToken, cs[which].toString()).enqueue(new Callback<UserModel>() {
+                                @Override
+                                public void onResponse(Call<UserModel> call, Response<UserModel> response) {
+                                    if (response.isSuccessful()){
+                                        UserSingleton.getInstance().userModel = response.body();
+                                        updateUi();
+                                        mListView.smoothScrollToPosition(mListView.getAdapter().getCount() -1);
+                                    }else {
+                                        Toast.makeText(getBaseContext(), response.message(), Toast.LENGTH_SHORT).show();
+                                    }
+                                    dialog.dismiss();
+                                }
+
+                                @Override
+                                public void onFailure(Call<UserModel> call, Throwable t) {
+                                    dialog.dismiss();
+                                    Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
+
+                                }
+                            });
+                        }
+                    });
+                    builder.show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoanTypes> call, Throwable t) {
+                dialog.dismiss();
+            }
+        });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -104,12 +156,15 @@ public class MainActivity extends AppCompatActivity
                     if (response.isSuccessful()){
                         UserSingleton.getInstance().userModel = response.body();
                         updateUi();
+                    }else {
+                        Toast.makeText(getBaseContext(), response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(Call<UserModel> call, Throwable t) {
                     dialog.dismiss();
+                    Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
         }else {
@@ -205,7 +260,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
             if (convertView == null){
                 LayoutInflater inflater = (LayoutInflater)MainActivity.this
                         .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -224,6 +279,15 @@ public class MainActivity extends AppCompatActivity
             else {
                 iv.setImageResource(R.drawable.logo);
             }
+            convertView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getApplicationContext(), LoanApplicationActivity.class);
+                    intent.putExtra("pos", position);
+                    startActivity(intent);
+                    overridePendingTransition(R.anim.slide_in_right, R.anim.nothing);
+                }
+            });
             return convertView;
         }
     }

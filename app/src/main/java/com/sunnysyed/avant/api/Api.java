@@ -1,5 +1,6 @@
 package com.sunnysyed.avant.api;
 
+import com.sunnysyed.avant.api.model.LoanTypes;
 import com.sunnysyed.avant.api.model.UserModel;
 
 import java.util.HashMap;
@@ -30,8 +31,12 @@ public interface Api {
     @GET("user/profile")
     Call<UserModel> getProfile(@Header("Authorization") String access_token);
 
+    @GET("loan_application/loan_types")
+    Call<LoanTypes> getLoanTypes();
+
+    @FormUrlEncoded
     @POST("loan_application/create")
-    Call<UserModel> createLoanApplication(@Header("Authorization") String access_token);
+    Call<UserModel> createLoanApplication(@Header("Authorization") String access_token, @Field("loan_type") String loan_type);
 
     @POST("loan_application/upload_attachment")
     Call<UserModel> addImageToLoanApplication(@Header("Authorization") String authorization, @Body RequestBody body);

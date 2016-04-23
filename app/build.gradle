@@ -42,5 +42,7 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.1.2'
     compile 'cc.cloudist.acplibrary:library:1.2.1'//Loading
     compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'com.soundcloud.android:android-crop:1.0.1@aar'
+
 
 }

@@ -33,6 +33,7 @@ public class Avant extends Application {
                 .build();
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
                 .defaultDisplayImageOptions(defaultOptions)
+                .writeDebugLogs()
                 .build();
         ImageLoader.getInstance().init(config);
 

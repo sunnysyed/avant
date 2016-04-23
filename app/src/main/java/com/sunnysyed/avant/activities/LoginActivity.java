@@ -27,6 +27,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,7 +147,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }else {
                     dialog.dismiss();
                     APIError error = ErrorUtils.parseError(response);
-                    if (error.getError().contains("Email")){
+                    if (error.getError().toLowerCase().contains("email")){
                         mEmailView.setError(error.getError());
                         mEmailView.requestFocus();
                     }else {
@@ -160,8 +161,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public void onFailure(Call<UserModel> call, Throwable t) {
                 dialog.dismiss();
-                mEmailView.setError(t.getMessage());
-                mEmailView.requestFocus();
+                Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
