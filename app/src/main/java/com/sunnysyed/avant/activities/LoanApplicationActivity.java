@@ -48,8 +48,10 @@ import com.soundcloud.android.crop.Crop;
 import com.sunnysyed.avant.R;
 import com.sunnysyed.avant.api.AvantApi;
 import com.sunnysyed.avant.api.UserSingleton;
+import com.sunnysyed.avant.api.model.AttachmentTypes;
 import com.sunnysyed.avant.api.model.LoanApplication;
 import com.sunnysyed.avant.api.model.LoanApplicationAttachment;
+import com.sunnysyed.avant.api.model.LoanTypes;
 import com.sunnysyed.avant.api.model.UserModel;
 
 import java.io.ByteArrayOutputStream;
@@ -286,34 +288,64 @@ public class LoanApplicationActivity extends AppCompatActivity{
 
     private void handleCrop(int resultCode, Intent result) {
         if (resultCode == RESULT_OK) {
-            File f = new File(Crop.getOutput(result).getPath());
-            String photo_to_update = "image";
-            RequestBody body = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart(photo_to_update, photo_to_update + ".jpeg",
-                            RequestBody.create(MediaType.parse("image/jpeg"), f))
-                    .addFormDataPart("loan_application_id", mLoanApplication.getId().toString())
-                    .build();
-            dialog.show();
-            AvantApi.get().addImageToLoanApplication(UserSingleton.getInstance().accessToken, body).enqueue(new Callback<UserModel>() {
-                @Override
-                public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                    dialog.dismiss();
-                    if (response.isSuccessful()){
-                        UserSingleton.getInstance().userModel = response.body();
-                        updateUi();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<UserModel> call, Throwable t) {
-                    dialog.dismiss();
-                    Toast.makeText(getBaseContext(), t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
+            selectAttachmentType(result);
         } else if (resultCode == Crop.RESULT_ERROR) {
             Toast.makeText(this, Crop.getError(result).getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void selectAttachmentType(final Intent result){
+
+        dialog.show();
+        AvantApi.get().getAttachmentTypes().enqueue(new Callback<AttachmentTypes>() {
+            @Override
+            public void onResponse(Call<AttachmentTypes> call, Response<AttachmentTypes> response) {
+                dialog.dismiss();
+                if (response.isSuccessful()){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(LoanApplicationActivity.this);
+                    builder.setTitle("Select Loan Type");
+                    final CharSequence[] cs = response.body().getAttachmentTypes().toArray(new CharSequence[response.body().getAttachmentTypes().size()]);
+
+                    builder.setItems(cs, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(final DialogInterface dialog1, int which) {
+                            dialog.show();
+                            File f = new File(Crop.getOutput(result).getPath());
+                            String photo_to_update = "image";
+                            RequestBody body = new MultipartBody.Builder()
+                                    .setType(MultipartBody.FORM)
+                                    .addFormDataPart(photo_to_update, photo_to_update + ".jpeg",
+                                            RequestBody.create(MediaType.parse("image/jpeg"), f))
+                                    .addFormDataPart("loan_application_id", mLoanApplication.getId().toString())
+                                    .addFormDataPart("attachment_type", cs[which].toString())
+                                    .build();
+                            AvantApi.get().addImageToLoanApplication(UserSingleton.getInstance().accessToken, body).enqueue(new Callback<UserModel>() {
+                                @Override
+                                public void onResponse(Call<UserModel> call, Response<UserModel> response) {
+                                    dialog.dismiss();
+                                    if (response.isSuccessful()){
+                                        UserSingleton.getInstance().userModel = response.body();
+                                        updateUi();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<UserModel> call, Throwable t) {
+                                    dialog.dismiss();
+                                    Toast.makeText(getBaseContext(), t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    });
+                    builder.show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<AttachmentTypes> call, Throwable t) {
+                dialog.dismiss();
+            }
+        });
     }
 
     public void updateUi(){

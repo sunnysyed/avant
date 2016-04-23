@@ -1,5 +1,6 @@
 package com.sunnysyed.avant.api;
 
+import com.sunnysyed.avant.api.model.AttachmentTypes;
 import com.sunnysyed.avant.api.model.LoanTypes;
 import com.sunnysyed.avant.api.model.UserModel;
 
@@ -33,6 +34,9 @@ public interface Api {
 
     @GET("loan_application/loan_types")
     Call<LoanTypes> getLoanTypes();
+
+    @GET("loan_application/attachment_types")
+    Call<AttachmentTypes> getAttachmentTypes();
 
     @FormUrlEncoded
     @POST("loan_application/create")

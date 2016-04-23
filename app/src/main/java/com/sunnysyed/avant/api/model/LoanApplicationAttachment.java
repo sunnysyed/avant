@@ -19,6 +19,11 @@ public class LoanApplicationAttachment {
     @Expose
     private Integer id;
 
+
+    @SerializedName("attachment_type")
+    @Expose
+    private String attachmentType;
+
     /**
      * 
      * @return
@@ -89,6 +94,10 @@ public class LoanApplicationAttachment {
      */
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getAttachmentType() {
+        return attachmentType;
     }
 
 }
