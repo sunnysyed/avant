@@ -63,6 +63,15 @@
                     android:textAppearance="@style/Light" />
             </LinearLayout>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:id="@+id/status"
+                android:textSize="14sp"
+                android:textColor="@color/colorPrimary"
+                android:textAppearance="@style/Semibold" />
+
         </LinearLayout>
 
 

@@ -290,6 +290,9 @@ public class MainActivity extends AppCompatActivity
 
             TextView application_id = (TextView) convertView.findViewById(R.id.application_id);
             application_id.setText("Loan Application ID: " + getItem(position).getId());
+
+            TextView status = (TextView) convertView.findViewById(R.id.status);
+            status.setText("Status: " + getItem(position).getApplicationStatus());
             List<LoanApplicationAttachment> mLoanApplicationAttachment = getItem(position).getLoanApplicationAttachments();
             ImageView iv = (ImageView) convertView.findViewById(R.id.image);
             if (mLoanApplicationAttachment != null && mLoanApplicationAttachment.size() > 0) {
