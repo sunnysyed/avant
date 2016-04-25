@@ -7,17 +7,15 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
@@ -29,9 +27,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.sunnysyed.avant.Avant;
 import com.sunnysyed.avant.R;
 import com.sunnysyed.avant.api.AvantApi;
 import com.sunnysyed.avant.api.UserSingleton;
@@ -52,7 +48,7 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private ACProgressFlower dialog;
+    private ACProgressFlower mDialog;
 
     TextView mNameView, mEmailView;
     private ListView mListView;
@@ -89,20 +85,25 @@ public class MainActivity extends AppCompatActivity
 
         mEmptyView = (LinearLayout) findViewById(R.id.empty_view);
 
-        dialog = new ACProgressFlower.Builder(this)
+        mDialog = new ACProgressFlower.Builder(this)
                 .direction(ACProgressConstant.DIRECT_CLOCKWISE)
                 .themeColor(Color.WHITE)
                 .fadeColor(Color.TRANSPARENT).build();
-        dialog.setCanceledOnTouchOutside(false);
+        mDialog.setCanceledOnTouchOutside(false);
     }
 
+    /**
+     * Call api and get valid loan types
+     * On selection create a loan of that type and update ui
+     */
+
     private void selectLoanType() {
-        dialog.show();
+        mDialog.show();
         AvantApi.get().getLoanTypes().enqueue(new Callback<LoanTypes>() {
             @Override
             public void onResponse(Call<LoanTypes> call, Response<LoanTypes> response) {
-                dialog.dismiss();
-                if (response.isSuccessful()){
+                mDialog.dismiss();
+                if (response.isSuccessful()) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                     builder.setTitle("Select Loan Type");
                     final CharSequence[] cs = response.body().getLoanTypes().toArray(new CharSequence[response.body().getLoanTypes().size()]);
@@ -110,23 +111,23 @@ public class MainActivity extends AppCompatActivity
                     builder.setItems(cs, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(final DialogInterface dialog1, int which) {
-                            dialog.show();
+                            mDialog.show();
                             AvantApi.get().createLoanApplication(UserSingleton.getInstance().accessToken, cs[which].toString()).enqueue(new Callback<UserModel>() {
                                 @Override
                                 public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                                    if (response.isSuccessful()){
+                                    if (response.isSuccessful()) {
                                         UserSingleton.getInstance().userModel = response.body();
                                         updateUi();
-                                        mListView.smoothScrollToPosition(mListView.getAdapter().getCount() -1);
-                                    }else {
+                                        mListView.smoothScrollToPosition(mListView.getAdapter().getCount() - 1);
+                                    } else {
                                         Toast.makeText(getBaseContext(), response.message(), Toast.LENGTH_SHORT).show();
                                     }
-                                    dialog.dismiss();
+                                    mDialog.dismiss();
                                 }
 
                                 @Override
                                 public void onFailure(Call<UserModel> call, Throwable t) {
-                                    dialog.dismiss();
+                                    mDialog.dismiss();
                                     Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
 
                                 }
@@ -139,45 +140,57 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onFailure(Call<LoanTypes> call, Throwable t) {
-                dialog.dismiss();
+                mDialog.dismiss();
+                Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
+    /**
+     * Determine if the user model object is set if not call api and get it
+     * update ui with new user model
+     */
+
     @Override
     protected void onResume() {
         super.onResume();
-        dialog.show();
-        if (UserSingleton.getInstance().userModel == null){
+        mDialog.show();
+        if (UserSingleton.getInstance().userModel == null) {
             AvantApi.get().getProfile(UserSingleton.getInstance().accessToken).enqueue(new Callback<UserModel>() {
                 @Override
                 public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                    dialog.dismiss();
-                    if (response.isSuccessful()){
+                    mDialog.dismiss();
+                    if (response.isSuccessful()) {
                         UserSingleton.getInstance().userModel = response.body();
                         updateUi();
-                    }else {
+                    } else {
                         Toast.makeText(getBaseContext(), response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(Call<UserModel> call, Throwable t) {
-                    dialog.dismiss();
+                    mDialog.dismiss();
                     Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-        }else {
+        } else {
             updateUi();
-            dialog.dismiss();
+            mDialog.dismiss();
         }
     }
 
-    public void updateUi(){
+    /**
+     * Update UI for based on the number of loan applications
+     * Show a list view of loan applications
+     * Show empty view if there are'nt any loan applications
+     */
+
+    public void updateUi() {
         mNameView.setText(UserSingleton.getInstance().userModel.getProfile().getFirstName() + " " + UserSingleton.getInstance().userModel.getProfile().getLastName());
         mEmailView.setText(UserSingleton.getInstance().userModel.getProfile().getEmail());
-        if (UserSingleton.getInstance().userModel.getLoanApplications() == null || UserSingleton.getInstance().userModel.getLoanApplications().size() ==0 ){
-            final ImageView logo = (ImageView)findViewById(R.id.logo);
+        if (UserSingleton.getInstance().userModel.getLoanApplications() == null || UserSingleton.getInstance().userModel.getLoanApplications().size() == 0) {
+            final ImageView logo = (ImageView) findViewById(R.id.logo);
 
             Runnable action = new Runnable() {
                 @Override
@@ -199,7 +212,7 @@ public class MainActivity extends AppCompatActivity
             logo.post(action);
             mEmptyView.setVisibility(View.VISIBLE);
             mListView.setVisibility(View.GONE);
-        }else {
+        } else {
             mListView.setAdapter(new LoanApplicationAdapter(UserSingleton.getInstance().userModel.getLoanApplications()));
             mEmptyView.setVisibility(View.GONE);
             mListView.setVisibility(View.VISIBLE);
@@ -216,15 +229,19 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Handels Logout of user
+     * @param item
+     * @return
+     */
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.logout) {
+        if (id == R.id.logout) {
             UserSingleton.getInstance().logout();
             Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
             startActivity(intent);
@@ -237,13 +254,15 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public  class LoanApplicationAdapter extends BaseAdapter {
+    public class LoanApplicationAdapter extends BaseAdapter {
 
         ArrayList<LoanApplication> mLoanApplications;
-        public LoanApplicationAdapter (List<LoanApplication> applications) {
+
+        public LoanApplicationAdapter(List<LoanApplication> applications) {
             mLoanApplications = new ArrayList<>();
             mLoanApplications.addAll(applications);
         }
+
         @Override
         public int getCount() {
             return mLoanApplications.size();
@@ -261,8 +280,8 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
-            if (convertView == null){
-                LayoutInflater inflater = (LayoutInflater)MainActivity.this
+            if (convertView == null) {
+                LayoutInflater inflater = (LayoutInflater) MainActivity.this
                         .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = inflater.inflate(R.layout.loan_application_item, parent, false);
             }
@@ -273,10 +292,9 @@ public class MainActivity extends AppCompatActivity
             application_id.setText("Loan Application ID: " + getItem(position).getId());
             List<LoanApplicationAttachment> mLoanApplicationAttachment = getItem(position).getLoanApplicationAttachments();
             ImageView iv = (ImageView) convertView.findViewById(R.id.image);
-            if (mLoanApplicationAttachment != null && mLoanApplicationAttachment.size() > 0){
-                ImageLoader.getInstance().displayImage(mLoanApplicationAttachment.get(mLoanApplicationAttachment.size() -1).getImageUrl(), iv);
-            }
-            else {
+            if (mLoanApplicationAttachment != null && mLoanApplicationAttachment.size() > 0) {
+                ImageLoader.getInstance().displayImage(mLoanApplicationAttachment.get(mLoanApplicationAttachment.size() - 1).getImageUrl(), iv);
+            } else {
                 iv.setImageResource(R.drawable.logo);
             }
             convertView.setOnClickListener(new View.OnClickListener() {

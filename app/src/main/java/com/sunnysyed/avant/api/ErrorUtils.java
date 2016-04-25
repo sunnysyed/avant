@@ -13,7 +13,11 @@ import retrofit2.Response;
  * Created by SuNnY on 4/22/16.
  */
 public class ErrorUtils {
-
+    /**
+     * Create a parsable way to load the specific error message from the api
+     * @param response
+     * @return APIError containing error message
+     */
     public static APIError parseError(Response<?> response) {
         Converter<ResponseBody, APIError> converter =
                 AvantApi.getRetrofit().responseBodyConverter(APIError.class, new Annotation[0]);

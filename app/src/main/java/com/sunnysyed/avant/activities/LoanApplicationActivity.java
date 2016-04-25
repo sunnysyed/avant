@@ -2,28 +2,17 @@ package com.sunnysyed.avant.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -33,17 +22,12 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.display.SimpleBitmapDisplayer;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 import com.soundcloud.android.crop.Crop;
 import com.sunnysyed.avant.R;
 import com.sunnysyed.avant.api.AvantApi;
@@ -51,10 +35,8 @@ import com.sunnysyed.avant.api.UserSingleton;
 import com.sunnysyed.avant.api.model.AttachmentTypes;
 import com.sunnysyed.avant.api.model.LoanApplication;
 import com.sunnysyed.avant.api.model.LoanApplicationAttachment;
-import com.sunnysyed.avant.api.model.LoanTypes;
 import com.sunnysyed.avant.api.model.UserModel;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -71,18 +53,18 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class LoanApplicationActivity extends AppCompatActivity{
+public class LoanApplicationActivity extends AppCompatActivity {
 
 
     int REQUEST_CAMERA = 0, SELECT_FILE = 1;
     String mCurrentPhotoPath;
-    Uri image;
+    Uri mImageUri;
     int mPos = 0;
 
 
-    private ACProgressFlower dialog;
+    private ACProgressFlower mDialog;
 
-    private GridView mGridview;
+    private GridView mGridView;
     private LinearLayout mEmptyView;
     private Toolbar mToolbar;
     private DisplayImageOptions options;
@@ -121,15 +103,15 @@ public class LoanApplicationActivity extends AppCompatActivity{
         });
 
 
-        mGridview = (GridView) findViewById(R.id.gridview);
+        mGridView = (GridView) findViewById(R.id.gridview);
 
         mEmptyView = (LinearLayout) findViewById(R.id.empty_view);
 
-        dialog = new ACProgressFlower.Builder(this)
+        mDialog = new ACProgressFlower.Builder(this)
                 .direction(ACProgressConstant.DIRECT_CLOCKWISE)
                 .themeColor(Color.WHITE)
                 .fadeColor(Color.TRANSPARENT).build();
-        dialog.setCanceledOnTouchOutside(false);
+        mDialog.setCanceledOnTouchOutside(false);
 
         options = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
@@ -143,13 +125,17 @@ public class LoanApplicationActivity extends AppCompatActivity{
                 .considerExifParams(true)
                 .displayer(new SimpleBitmapDisplayer())
                 .build();
-        if (UserSingleton.getInstance().userModel == null){
+        if (UserSingleton.getInstance().userModel == null) {
             onResume();
-        }else {
+        } else {
             updateUi();
         }
     }
 
+    /**
+     * Save loan application position in list so it can be retrieved at later if activity is closed
+     * @param outState
+     */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
 
@@ -157,23 +143,27 @@ public class LoanApplicationActivity extends AppCompatActivity{
         super.onSaveInstanceState(outState);
     }
 
+    /**
+     * Reload user if userModel is null
+     * Update UI
+     */
     @Override
     protected void onResume() {
         super.onResume();
-        if (dialog == null) {
-            dialog = new ACProgressFlower.Builder(this)
+        if (mDialog == null) {
+            mDialog = new ACProgressFlower.Builder(this)
                     .direction(ACProgressConstant.DIRECT_CLOCKWISE)
                     .themeColor(Color.WHITE)
                     .fadeColor(Color.TRANSPARENT).build();
-            dialog.setCanceledOnTouchOutside(false);
+            mDialog.setCanceledOnTouchOutside(false);
         }
-        if (UserSingleton.getInstance().userModel == null){
-            dialog.show();
+        if (UserSingleton.getInstance().userModel == null) {
+            mDialog.show();
             AvantApi.get().getProfile(UserSingleton.getInstance().accessToken).enqueue(new Callback<UserModel>() {
                 @Override
                 public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                    dialog.dismiss();
-                    if (response.isSuccessful()){
+                    mDialog.dismiss();
+                    if (response.isSuccessful()) {
                         UserSingleton.getInstance().userModel = response.body();
                         updateUi();
                     }
@@ -181,18 +171,23 @@ public class LoanApplicationActivity extends AppCompatActivity{
 
                 @Override
                 public void onFailure(Call<UserModel> call, Throwable t) {
-                    dialog.dismiss();
+                    mDialog.dismiss();
+                    Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
         }
     }
 
+    /**
+     * Give user ability to load image from gallery or take a picture
+     * Launch proper intents
+     */
     private void selectImage() {
         final CharSequence[] items = {"Take Photo", "Choose from Library",
                 "Cancel"};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Add Photo!");
+        builder.setTitle("Upload Attachment");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
@@ -214,6 +209,11 @@ public class LoanApplicationActivity extends AppCompatActivity{
         builder.show();
     }
 
+    /**
+     * Create a file reference to where the image will be stored
+     * @return
+     * @throws IOException
+     */
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -230,14 +230,16 @@ public class LoanApplicationActivity extends AppCompatActivity{
         return image;
     }
 
-
+    /**
+     * Launch Camera and update intent with the URI to where it should save the resulting image
+     */
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             File photoFile = null;
             try {
                 photoFile = createImageFile();
-                image = Uri.fromFile(photoFile);
+                mImageUri = Uri.fromFile(photoFile);
             } catch (IOException ex) {
             }
             if (photoFile != null) {
@@ -248,15 +250,28 @@ public class LoanApplicationActivity extends AppCompatActivity{
         }
     }
 
+    /**
+     * Open Crop activity lib to handle captured image result
+     * @param data
+     */
     private void onCaptureImageResult(Intent data) {
-        beginCrop(image);
+        beginCrop(mImageUri);
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * Open Crop activity lib to handle selected image result
+     * @param data
+     */
     private void onSelectFromGalleryResult(Intent data) {
         beginCrop(data.getData());
     }
 
+    /**
+     * Handel response for camera or gallery result intent
+     * @param requestCode
+     * @param resultCode
+     * @param result
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent result) {
 
@@ -274,18 +289,20 @@ public class LoanApplicationActivity extends AppCompatActivity{
 
     }
 
-//    public Uri getImageUri(Context inContext, Bitmap inImage) {
-//        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-//        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-//        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
-//        return Uri.parse(path);
-//    }
-
+    /**
+     * Launch cropt activity with a location of where to store the results
+     * @param source
+     */
     private void beginCrop(Uri source) {
         Uri destination = Uri.fromFile(new File(getCacheDir(), "cropped"));
         Crop.of(source, destination).asSquare().start(this);
     }
 
+    /**
+     * If crop is sucessfull prompt user to select what kind of image is being uploaded
+     * @param resultCode
+     * @param result
+     */
     private void handleCrop(int resultCode, Intent result) {
         if (resultCode == RESULT_OK) {
             selectAttachmentType(result);
@@ -294,22 +311,29 @@ public class LoanApplicationActivity extends AppCompatActivity{
         }
     }
 
-    public void selectAttachmentType(final Intent result){
+    /**
+     * Get valid Attachments Type from the API
+     * Prompt user to select a type
+     * Upload image to the server
+     * update UI
+     * @param result
+     */
+    public void selectAttachmentType(final Intent result) {
 
-        dialog.show();
+        mDialog.show();
         AvantApi.get().getAttachmentTypes().enqueue(new Callback<AttachmentTypes>() {
             @Override
             public void onResponse(Call<AttachmentTypes> call, Response<AttachmentTypes> response) {
-                dialog.dismiss();
-                if (response.isSuccessful()){
+                mDialog.dismiss();
+                if (response.isSuccessful()) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(LoanApplicationActivity.this);
-                    builder.setTitle("Select Loan Type");
+                    builder.setTitle("Select Attachment Type");
                     final CharSequence[] cs = response.body().getAttachmentTypes().toArray(new CharSequence[response.body().getAttachmentTypes().size()]);
 
                     builder.setItems(cs, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(final DialogInterface dialog1, int which) {
-                            dialog.show();
+                            mDialog.show();
                             File f = new File(Crop.getOutput(result).getPath());
                             String photo_to_update = "image";
                             RequestBody body = new MultipartBody.Builder()
@@ -322,8 +346,8 @@ public class LoanApplicationActivity extends AppCompatActivity{
                             AvantApi.get().addImageToLoanApplication(UserSingleton.getInstance().accessToken, body).enqueue(new Callback<UserModel>() {
                                 @Override
                                 public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                                    dialog.dismiss();
-                                    if (response.isSuccessful()){
+                                    mDialog.dismiss();
+                                    if (response.isSuccessful()) {
                                         UserSingleton.getInstance().userModel = response.body();
                                         updateUi();
                                     }
@@ -331,7 +355,7 @@ public class LoanApplicationActivity extends AppCompatActivity{
 
                                 @Override
                                 public void onFailure(Call<UserModel> call, Throwable t) {
-                                    dialog.dismiss();
+                                    mDialog.dismiss();
                                     Toast.makeText(getBaseContext(), t.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
@@ -343,17 +367,22 @@ public class LoanApplicationActivity extends AppCompatActivity{
 
             @Override
             public void onFailure(Call<AttachmentTypes> call, Throwable t) {
-                dialog.dismiss();
+                mDialog.dismiss();
+                Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    public void updateUi(){
-        dialog.dismiss();
+    /**
+     * Reload the Application and attachments
+     * If no attachments show empty
+     */
+    public void updateUi() {
+        mDialog.dismiss();
         mLoanApplication = UserSingleton.getInstance().userModel.getLoanApplications().get(mPos);
         getSupportActionBar().setTitle("Loan Application ID: " + mLoanApplication.getId());
-        if (mLoanApplication.getLoanApplicationAttachments() == null || mLoanApplication.getLoanApplicationAttachments().size() ==0 ){
-            final ImageView logo = (ImageView)findViewById(R.id.logo);
+        if (mLoanApplication.getLoanApplicationAttachments() == null || mLoanApplication.getLoanApplicationAttachments().size() == 0) {
+            final ImageView logo = (ImageView) findViewById(R.id.logo);
 
             Runnable action = new Runnable() {
                 @Override
@@ -374,21 +403,23 @@ public class LoanApplicationActivity extends AppCompatActivity{
             };
             logo.post(action);
             mEmptyView.setVisibility(View.VISIBLE);
-            mGridview.setVisibility(View.GONE);
-        }else {
-            mGridview.setAdapter(new LoanApplicationAttachmentsAdapter(mLoanApplication.getLoanApplicationAttachments()));
+            mGridView.setVisibility(View.GONE);
+        } else {
+            mGridView.setAdapter(new LoanApplicationAttachmentsAdapter(mLoanApplication.getLoanApplicationAttachments()));
             mEmptyView.setVisibility(View.GONE);
-            mGridview.setVisibility(View.VISIBLE);
+            mGridView.setVisibility(View.VISIBLE);
         }
     }
 
-    public  class LoanApplicationAttachmentsAdapter extends BaseAdapter {
+    public class LoanApplicationAttachmentsAdapter extends BaseAdapter {
 
         ArrayList<LoanApplicationAttachment> mLoanApplicationsAttachments;
-        public LoanApplicationAttachmentsAdapter (List<LoanApplicationAttachment> attachments) {
+
+        public LoanApplicationAttachmentsAdapter(List<LoanApplicationAttachment> attachments) {
             mLoanApplicationsAttachments = new ArrayList<>();
             mLoanApplicationsAttachments.addAll(attachments);
         }
+
         @Override
         public int getCount() {
             return mLoanApplicationsAttachments.size();
@@ -408,13 +439,11 @@ public class LoanApplicationActivity extends AppCompatActivity{
         public View getView(int position, View convertView, final ViewGroup parent) {
             final ImageView imageView;
             if (convertView == null) {
-                // if it's not recycled, initialize some attributes
                 imageView = new ImageView(LoanApplicationActivity.this);
-//                int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 120, getResources().getDisplayMetrics());
                 parent.post(new Runnable() {
                     @Override
                     public void run() {
-                        imageView.setLayoutParams(new GridView.LayoutParams(parent.getWidth()/3, parent.getWidth()/3));
+                        imageView.setLayoutParams(new GridView.LayoutParams(parent.getWidth() / 3, parent.getWidth() / 3));
                     }
                 });
                 imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -425,5 +454,4 @@ public class LoanApplicationActivity extends AppCompatActivity{
             return imageView;
         }
     }
-
 }

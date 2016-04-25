@@ -44,15 +44,10 @@ public class Avant extends Application {
                 .setPrefsName(getPackageName())
                 .setUseDefaultSharedPreference(true)
                 .build();
-//
+
         UserSingleton.getInstance().loadUser();
 
     }
 
-    @Override
-    public void onTerminate() {
-        super.onTerminate();
-
-    }
 
 }

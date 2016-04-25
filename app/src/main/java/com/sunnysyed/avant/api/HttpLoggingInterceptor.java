@@ -1,8 +1,5 @@
 package com.sunnysyed.avant.api;
 
-/**
- * Created by SuNnY on 3/30/16.
- */
 /*
  * Copyright (C) 2015 Square, Inc.
  *

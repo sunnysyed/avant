@@ -10,33 +10,34 @@ import android.view.animation.Interpolator;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.Handler;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.Interpolator;
-import android.view.animation.ScaleAnimation;
-import android.widget.ImageView;
-
 import com.sunnysyed.avant.R;
 import com.sunnysyed.avant.api.AvantApi;
 import com.sunnysyed.avant.api.UserSingleton;
 import com.sunnysyed.avant.api.model.UserModel;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 
 public class SplashActivity extends Activity {
 
-    ImageView logo;
+    @Bind(R.id.logo)
+    ImageView mLogo;
 
+
+    /**
+     * Determine if a user has logged in before
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-        logo = (ImageView)findViewById(R.id.logo);
+        ButterKnife.bind(this);
+
 
         Runnable action = new Runnable() {
             @Override
@@ -48,44 +49,48 @@ public class SplashActivity extends Activity {
                         return (float) Math.sin(x * Math.PI);
                     }
                 };
-                ScaleAnimation anim = new ScaleAnimation(1, 1.2f, 1, 1.2f, logo.getWidth() / 2, logo.getHeight() / 2);
+                ScaleAnimation anim = new ScaleAnimation(1, 1.2f, 1, 1.2f, mLogo.getWidth() / 2, mLogo.getHeight() / 2);
                 anim.setRepeatCount(Animation.INFINITE);
                 anim.setDuration(750);
                 anim.setInterpolator(i);
-                logo.startAnimation(anim);
+                mLogo.startAnimation(anim);
             }
         };
-        logo.post(action);
+        mLogo.post(action);
 
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             public void run() {
-                  if (!UserSingleton.getInstance().accessToken.equals("")){
-                      AvantApi.get().getProfile(UserSingleton.getInstance().accessToken).enqueue(new Callback<UserModel>() {
-                          @Override
-                          public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                              UserSingleton.getInstance().userModel = response.body();
-                              openMain();
-                          }
-
-                          @Override
-                          public void onFailure(Call<UserModel> call, Throwable t) {
+                if (!UserSingleton.getInstance().accessToken.equals("")) {
+                    AvantApi.get().getProfile(UserSingleton.getInstance().accessToken).enqueue(new Callback<UserModel>() {
+                        @Override
+                        public void onResponse(Call<UserModel> call, Response<UserModel> response) {
+                            if (response.isSuccessful()) {
+                                UserSingleton.getInstance().userModel = response.body();
+                                openMain();
+                            }else {
                                 openLogin();
-                          }
-                      });
-                  }else {
-                      openLogin();
-                  }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<UserModel> call, Throwable t) {
+                            openLogin();
+                        }
+                    });
+                } else {
+                    openLogin();
+                }
             }
         }, 1500);
 
     }
 
 
-
-
-
-    public void   openMain(){
+    /**
+     * Display ending animation and launch MainActivity
+     */
+    public void openMain() {
         Animation anim = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.grow);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
@@ -110,11 +115,14 @@ public class SplashActivity extends Activity {
 
             }
         });
-        logo.clearAnimation();
-        logo.startAnimation(anim);
+        mLogo.clearAnimation();
+        mLogo.startAnimation(anim);
     }
 
-    public void   openLogin(){
+    /**
+     * Display ending animation and launch LoginActivity
+     */
+    public void openLogin() {
         Animation anim = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.grow);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
@@ -139,8 +147,8 @@ public class SplashActivity extends Activity {
 
             }
         });
-        logo.clearAnimation();
-        logo.startAnimation(anim);
+        mLogo.clearAnimation();
+        mLogo.startAnimation(anim);
     }
 }
 

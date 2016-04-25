@@ -49,7 +49,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
     @Bind(R.id.password)
     EditText mPasswordView;
     private Toolbar mToolbar;
-    private ACProgressFlower dialog;
+    private ACProgressFlower mDialog;
 
 
     @Override
@@ -86,47 +86,55 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
             }
         });
 
-        dialog = new ACProgressFlower.Builder(this)
+        mDialog = new ACProgressFlower.Builder(this)
                 .direction(ACProgressConstant.DIRECT_CLOCKWISE)
                 .themeColor(Color.WHITE)
                 .fadeColor(Color.TRANSPARENT).build();
-        dialog.setCanceledOnTouchOutside(false);
+        mDialog.setCanceledOnTouchOutside(false);
     }
 
+    /**
+     * OnClick method for sign up button
+     * Attempt to sign up user
+     * @param v
+     */
     public void signUp(View v) {
         attemptSignUp();
     }
 
+    /**
+     *  Load data to fill in Autocomplete dropdown
+     */
     private void populateAutoComplete() {
         getLoaderManager().initLoader(0, null, this);
     }
 
+
     /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
+     * Reset Errors
+     * Validate inputs
+     * Call api and try to register user
      */
     private void attemptSignUp() {
-        // Reset errors.
         mFirstNameView.setError(null);
         mLastNameView.setError(null);
         mEmailView.setError(null);
         mPasswordView.setError(null);
 
 
-        // Store values at the time of the login attempt.
         String firstName = mFirstNameView.getText().toString();
         String lastName = mLastNameView.getText().toString();
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
 
-
+        // Check if the user entered first name.
         if (TextUtils.isEmpty(firstName)){
             mFirstNameView.setError("Please enter a first name");
             mFirstNameView.requestFocus();
             return;
         }
 
+        // Check f the user entered last name.
         if (TextUtils.isEmpty(lastName)){
             mLastNameView.setError("Please enter a last name");
             mLastNameView.requestFocus();
@@ -140,7 +148,6 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
             return;
         }
 
-        // Check for a valid email address.
         if (TextUtils.isEmpty(email)) {
             mEmailView.setError(getString(R.string.error_field_required));
             mEmailView.requestFocus();
@@ -150,12 +157,13 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
             mEmailView.requestFocus();
             return;
         }
-        dialog.show();
+        mDialog.show();
+
         AvantApi.get().register(email, password, firstName, lastName).enqueue(new Callback<UserModel>() {
             @Override
             public void onResponse(Call<UserModel> call, Response<UserModel> response) {
                 if (response.isSuccessful()) {
-                    dialog.dismiss();
+                    mDialog.dismiss();
                     UserSingleton.getInstance().userModel = response.body();
                     UserSingleton.getInstance().accessToken = "bearer " + response.body().getProfile().getAccessToken();
                     UserSingleton.getInstance().saveUser();
@@ -164,7 +172,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
                     overridePendingTransition(R.anim.slide_in_right, R.anim.nothing);
                     finish();
                 } else {
-                    dialog.dismiss();
+                    mDialog.dismiss();
                     APIError error = ErrorUtils.parseError(response);
                     if (error.getError().toLowerCase().contains("email")){
                         mEmailView.setError(error.getError());
@@ -179,17 +187,29 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
 
             @Override
             public void onFailure(Call<UserModel> call, Throwable t) {
-                dialog.dismiss();
+                mDialog.dismiss();
                 Toast.makeText(getBaseContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
     }
 
+    /**
+     * Determines if the given email is valid
+     *
+     * @param email
+     * @return true if valid
+     */
     private boolean isEmailValid(String email) {
         return email.contains("@");
     }
 
+    /**
+     * determines if the given password is valid
+     *
+     * @param password
+     * @return true if valid
+     */
     private boolean isPasswordValid(String password) {
         return password.length() > 4;
     }
@@ -198,17 +218,12 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         return new CursorLoader(this,
-                // Retrieve data rows for the device user's 'profile' contact.
                 Uri.withAppendedPath(ContactsContract.Profile.CONTENT_URI,
                         ContactsContract.Contacts.Data.CONTENT_DIRECTORY), ProfileQuery.PROJECTION,
 
-                // Select only email addresses.
                 ContactsContract.Contacts.Data.MIMETYPE +
                         " = ?", new String[]{ContactsContract.CommonDataKinds.Email
                 .CONTENT_ITEM_TYPE},
-
-                // Show primary email addresses first. Note that there won't be
-                // a primary email address if the user hasn't specified one.
                 ContactsContract.Contacts.Data.IS_PRIMARY + " DESC");
     }
 
@@ -229,8 +244,12 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
 
     }
 
+    /**
+     * Adds list of emails to mEmailView autocomplete
+     *
+     * @param emailAddressCollection
+     */
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
-        //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(RegisterActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
@@ -246,6 +265,5 @@ public class RegisterActivity extends AppCompatActivity implements LoaderManager
         };
 
         int ADDRESS = 0;
-        int IS_PRIMARY = 1;
     }
 }

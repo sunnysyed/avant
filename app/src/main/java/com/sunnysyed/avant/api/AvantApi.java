@@ -41,6 +41,12 @@ public class AvantApi {
         return retrofit;
     }
 
+    /**
+     * Set up retrofit with a new OkHttpClient
+     * Add interceptor for logs
+     * Set date format for Gson
+     * Add error handling
+     */
     private static void setupRestClient() {
 
 
